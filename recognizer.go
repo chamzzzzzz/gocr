@@ -8,8 +8,8 @@ import (
 
 type Option struct {
 	Type      string
-	ID        string
-	AppID     string
+	Id        string
+	AppId     string
 	AppKey    string
 	AppSecret string
 	AppURL    string
@@ -23,34 +23,41 @@ type Document struct {
 }
 
 type Size struct {
-	Width  int
-	Height int
+	Width  int `json:"width,omitempty"`
+	Height int `json:"height,omitempty"`
 }
 
 type Point struct {
-	X int
-	Y int
+	X int `json:"x,omitempty"`
+	Y int `json:"y,omitempty"`
 }
 
-type BoudingBox struct {
-	Origin Point
-	Size   Size
+type BoundingBox struct {
+	Origin Point `json:"origin,omitempty"`
+	Size   Size  `json:"size,omitempty"`
 }
 
 type Observation struct {
-	Confidence int
-	Text       string
-	BoudingBox BoudingBox
+	Confidence  int          `json:"confidence,omitempty"`
+	Text        string       `json:"text,omitempty"`
+	BoundingBox *BoundingBox `json:"bounding_box,omitempty"`
+}
+
+type Image struct {
+	File string `json:"file,omitempty"`
+	*Size
 }
 
 type Result struct {
-	Size         Size
-	Observations []*Observation
+	Code         string         `json:"code,omitempty"`
+	Message      string         `json:"message,omitempty"`
+	Image        *Image         `json:"image,omitempty"`
+	Observations []*Observation `json:"observations,omitempty"`
 }
 
 type Recognizer interface {
 	GetType() string
-	GetID() string
+	GetId() string
 	GetOption() Option
 	Recognize(ctx context.Context, document *Document) (*Result, error)
 }
@@ -78,7 +85,7 @@ func (r *Workspace) RegisterCreator(creator Creator) error {
 }
 
 func (r *Workspace) AddRecognizer(recognizer Recognizer) error {
-	r.recognizers[recognizer.GetID()] = recognizer
+	r.recognizers[recognizer.GetId()] = recognizer
 	return nil
 }
 

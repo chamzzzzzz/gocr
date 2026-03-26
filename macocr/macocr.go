@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"strconv"
-	"strings"
 
 	"github.com/chamzzzzzz/gocr"
 )
@@ -43,8 +41,8 @@ func (p *Recognizer) GetType() string {
 	return p.Type
 }
 
-func (p *Recognizer) GetID() string {
-	return p.ID
+func (p *Recognizer) GetId() string {
+	return p.Id
 }
 
 func (p *Recognizer) GetOption() gocr.Option {
@@ -69,35 +67,11 @@ func (p *Recognizer) Recognize(ctx context.Context, document *gocr.Document) (*g
 	}
 
 	result := &gocr.Result{}
-	output := strings.TrimSuffix(out.String(), "\n")
-	for i, line := range strings.Split(output, "\n") {
-		if i == 0 {
-			fields := strings.SplitN(line, " ", 2)
-			if len(fields) == 2 {
-				resolution := strings.Split(fields[0], "x")
-				if len(resolution) == 2 {
-					result.Size.Width, _ = strconv.Atoi(resolution[0])
-					result.Size.Height, _ = strconv.Atoi(resolution[1])
-				}
-			}
-		} else {
-			fields := strings.SplitN(line, " ", 3)
-			if len(fields) == 3 {
-				observation := &gocr.Observation{}
-				if normalizeConfidence, err := strconv.ParseFloat(fields[0], 64); err == nil {
-					observation.Confidence = int(normalizeConfidence * 100)
-				}
-				observation.Text = fields[2]
-				boudingBox := strings.Split(strings.Trim(fields[1], "[]"), ",")
-				if len(boudingBox) == 4 {
-					observation.BoudingBox.Origin.X, _ = strconv.Atoi(boudingBox[0])
-					observation.BoudingBox.Origin.Y, _ = strconv.Atoi(boudingBox[1])
-					observation.BoudingBox.Size.Width, _ = strconv.Atoi(boudingBox[2])
-					observation.BoudingBox.Size.Height, _ = strconv.Atoi(boudingBox[3])
-				}
-				result.Observations = append(result.Observations, observation)
-			}
-		}
+	if err := json.Unmarshal(out.Bytes(), result); err != nil {
+		return nil, err
+	}
+	if result.Code != "0" {
+		return result, fmt.Errorf("code: %s, message: %s", result.Code, result.Message)
 	}
 	return result, nil
 }
